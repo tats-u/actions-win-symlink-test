@@ -23,7 +23,7 @@ $link = Join-Path $tempDir 'link.txt'
 # 管理者チェック
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 
-Wirte-Host ($isAdmin ? "管理者として実行中" : "一般ユーザーとして実行中")
+Write-Host ($isAdmin ? "管理者として実行中" : "一般ユーザーとして実行中")
 
 # 1) 現在の Developer Mode (AppModelUnlock) 値を保存
 $regPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
@@ -47,13 +47,13 @@ if (Test-Path $link) { Remove-Item $link -Force -ErrorAction SilentlyContinue }
 Write-Host "シンボリックリンク作成を試行します..."
 
 # 5) シンボリックリンクを作る
-$p = New-Item -Path $link -ItemType SymbolicLink -Value $target -ErrorAction Continue
+New-Item -Path $link -ItemType SymbolicLink -Value $target -ErrorAction Continue
 
 # 6) 結果判定
-if ($p.ExitCode -eq 0 -and (Test-Path $link)) {
+if (-not $? -and (Test-Path $link)) {
     Write-Host "RESULT: シンボリックリンク作成に成功しました（リンクが作成されています）"
 } else {
-    Write-Host "RESULT: シンボリックリンク作成に失敗しました（ExitCode=$($p.ExitCode)）。リンクの存在: $(Test-Path $link)"
+    Write-Host "RESULT: シンボリックリンク作成に失敗しました（ExitCode=$($LASTEXITCODE)）。リンクの存在: $(Test-Path $link)"
 }
 
 # 7) 復元処理（レジストリとユーザー削除）
