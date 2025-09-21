@@ -1,0 +1,17 @@
+name: Symlink non-admin test (Windows)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  symlink-test:
+    runs-on: windows-latest
+    permissions:
+        contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Run symlink test
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File .\NonAdminSymlinkTest.ps1
+        shell: pwsh
