@@ -21,10 +21,9 @@ $target = Join-Path $tempDir 'target.txt'
 $link = Join-Path $tempDir 'link.txt'
 
 # 管理者チェック
-If (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Error "このスクリプトは管理者として実行する必要があります。"
-    exit 1
-}
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+
+Wirte-Host ($isAdmin ? "管理者として実行中" : "一般ユーザーとして実行中")
 
 # 1) 現在の Developer Mode (AppModelUnlock) 値を保存
 $regPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
@@ -45,15 +44,10 @@ Write-Host "Developer Mode を無効化しました（レジストリ: $regPath\
 Set-Content -Path $target -Value "hello symlink test" -Force
 if (Test-Path $link) { Remove-Item $link -Force -ErrorAction SilentlyContinue }
 
-# 5) 非管理者ユーザーで powershell を起動してシンボリックリンクを作成させる
-$fullUser = "$env:COMPUTERNAME\$testUserName"
-$cred = New-Object System.Management.Automation.PSCredential ($fullUser, $securePass)
-# 引数を組み立て（内部で例外が発生したら exit 2）
-$innerCommand = "try { New-Item -ItemType SymbolicLink -Path '$link' -Target '$target' -Force -ErrorAction Stop; exit 0 } catch { Write-Error \$_.Exception.Message; exit 2 }"
-$argList = "-NoProfile -Command `"${innerCommand}`""
-
 Write-Host "シンボリックリンク作成を試行します..."
-$p = Start-Process -FilePath (Get-Command powershell).Source -ArgumentList $argList -Credential $cred -Wait -PassThru
+
+# 5) シンボリックリンクを作る
+$p = New-Item -Path $link -ItemType SymbolicLink -Value $target -ErrorAction Continue
 
 # 6) 結果判定
 if ($p.ExitCode -eq 0 -and (Test-Path $link)) {
